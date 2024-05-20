@@ -1,46 +1,48 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Patch,
-  Param,
-  Delete,
-} from '@nestjs/common';
+import { Controller, ParseIntPipe } from '@nestjs/common';
 import { ProductosService } from './productos.service';
 import { CreateProductoDto } from './dto/create-producto.dto';
 import { UpdateProductoDto } from './dto/update-producto.dto';
+import { PaginationDto } from 'src/common';
+import { MessagePattern, Payload } from '@nestjs/microservices';
 
 @Controller('productos')
 export class ProductosController {
   constructor(private readonly productosService: ProductosService) {}
 
-  @Post()
-  create(@Body() createProductoDto: CreateProductoDto) {
-    // return this.productosService.create(createProductoDto);
-    return createProductoDto;
+  // @Post()
+  @MessagePattern({ cmd: 'create_product' })
+  create(@Payload() createProductoDto: CreateProductoDto) {
+    return this.productosService.create(createProductoDto);
   }
 
-  @Get()
-  findAll() {
-    return this.productosService.findAll();
+  // @Get()
+  @MessagePattern({ cmd: 'find_all' })
+  findAll(@Payload() paginationDto: PaginationDto) {
+    return this.productosService.findAll(paginationDto);
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.productosService.findOne(+id);
+  // @Get(':id')
+  @MessagePattern({ cmd: 'find_one_product' })
+  findOne(@Payload('id', ParseIntPipe) id: number) {
+    return this.productosService.findOne(id);
   }
 
-  @Patch(':id')
+  // @Patch(':id')
+  @MessagePattern({ cmd: 'update_product' })
   update(
-    @Param('id') id: string,
-    @Body() updateProductoDto: UpdateProductoDto,
+    // @Param('id') id: string,
+    // @Body() updateProductoDto: UpdateProductoDto,
+    @Payload() updateProductoDto: UpdateProductoDto,
   ) {
-    return this.productosService.update(+id, updateProductoDto);
+    return this.productosService.update(
+      updateProductoDto.id,
+      updateProductoDto,
+    );
   }
 
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.productosService.remove(+id);
+  // @Delete(':id')
+  @MessagePattern({ cmd: 'delete_product' })
+  remove(@Payload('id', ParseIntPipe) id: number) {
+    return this.productosService.remove(id);
   }
 }
